@@ -48,7 +48,7 @@ This workflow is responsible for building and packaging the AMI once the changes
    ```
 3. Build the AMI:
    ```bash
-   Build the AMI:
+   packer build .
    ```
 
 ### GitHub Actions Workflows
