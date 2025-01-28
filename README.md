@@ -2,7 +2,7 @@
 
 This repository contains Packer configuration files and GitHub Actions workflows for building and packaging AMIs (Amazon Machine Images) using Packer. The workflows are designed to automate the build process and ensure that the Packer configurations are correctly formatted and validated.
 
-## Workflow Overview
+## Workflows Overview
 
 ### CI Workflow
 
