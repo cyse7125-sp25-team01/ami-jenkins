@@ -14,7 +14,7 @@ The CI workflow is triggered on a pull request to the `main` branch. It performs
 4. **Packer Format Check**: Runs a format check on the Packer configuration files.
 5. **Packer Validate**: Validates the Packer configuration to ensure it is syntactically correct.
 
-This workflow ensures that Packer files are formatted and vali before they are merged into the `main` branch.
+This workflow ensures that Packer files are formatted and valid before they are merged into the `main` branch.
 
 ### Build and Package Workflow
 
