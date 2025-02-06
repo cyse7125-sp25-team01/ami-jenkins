@@ -58,7 +58,7 @@ locals {
 }
 
 source "amazon-ebs" "custom_ami" {
-  ami_name    = "webapp-ami-${local.timestamp}"
+  ami_name    = "jenkins-ami-${local.timestamp}"
   ami_regions = [var.region]
 
 
@@ -87,7 +87,7 @@ source "amazon-ebs" "custom_ami" {
 }
 
 build {
-  name    = "Webapp AMI"
+  name    = "Jenkins AMI"
   sources = ["source.amazon-ebs.custom_ami"]
 
   provisioner "shell" {
