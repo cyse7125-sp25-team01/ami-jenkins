@@ -146,5 +146,64 @@ sudo -u jenkins bash -c 'echo "export PATH=/var/lib/jenkins/tools/terraform:$PAT
 # Verify installation
 sudo -u jenkins bash -c 'cd /var/lib/jenkins/tools/terraform && ./terraform --version'
 
+echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline..."
+cat <<EOF > create_multibranch_pipeline.groovy
+import jenkins.model.*
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.*
+import org.jenkinsci.plugins.github_branch_source.*
+import org.jenkinsci.plugins.workflow.multibranch.*
+import jenkins.branch.*
+import hudson.util.Secret
+
+// Jenkins instance
+def jenkins = Jenkins.instance
+
+// GitHub App Credentials Details
+def credentialsId = "CloudJenkinsBuild"
+def appId = "1135780"
+def privateKey = Secret.fromString('''YOUR_PRIVATE_KEY_HERE''')
+
+// Check if credentials exist
+def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+def existingCredentials = store.getCredentials(Domain.global()).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    println "Creating new GitHub App credentials..."
+    def creds = new GitHubAppCredentials(CredentialsScope.GLOBAL, credentialsId, "GitHub App", appId, privateKey)
+    store.addCredentials(Domain.global(), creds)
+} else {
+    println "GitHub App credentials already exist."
+}
+
+// Pipeline Configuration
+def pipelineName = "tf-gcp-infra-pipeline"
+def repoOwner = "cyse7125-sp25-team01"
+def repoName = "tf-gcp-infra"
+
+// Check if pipeline exists
+def existingJob = jenkins.getItem(pipelineName)
+if (!existingJob) {
+    println "Creating Multibranch Pipeline: ${pipelineName}"
+
+    def mbp = new WorkflowMultiBranchProject(jenkins, pipelineName)
+
+    def source = new GitHubSCMSource(repoOwner, repoName)
+    source.setCredentialsId(credentialsId)
+    source.setTraits([new BranchDiscoveryTrait(3), new OriginPullRequestDiscoveryTrait(2)])
+
+    mbp.getSourcesList().add(new BranchSource(source))
+    mbp.setProjectFactory(new WorkflowBranchProjectFactory())
+
+    jenkins.add(mbp, pipelineName)
+    mbp.scheduleBuild()
+}
+
+jenkins.save()
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline.groovy
+echo "Jenkins Multibranch Pipeline setup complete!"
+
 
 
