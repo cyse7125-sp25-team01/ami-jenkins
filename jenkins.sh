@@ -121,32 +121,30 @@ fi
 
 echo "Installing Terraform Inside Jenkins..."
 
-# Ensure the directory exists and correct permissions are set
+# Create terraform directory with proper permissions
 sudo mkdir -p /var/lib/jenkins/tools/terraform
 sudo chown -R jenkins:jenkins /var/lib/jenkins/tools/terraform
-sudo chmod 755 /var/lib/jenkins/tools/terraform
+sudo chmod -R 755 /var/lib/jenkins/tools/terraform
 
-# Switch to the Jenkins user and explicitly set the working directory
-sudo -u jenkins bash <<EOF
-cd /var/lib/jenkins/tools/terraform
+# Download and install Terraform as jenkins user
+sudo -u jenkins bash -c '
+cd /var/lib/jenkins/tools/terraform || exit 1
 wget -q https://releases.hashicorp.com/terraform/1.4.6/terraform_1.4.6_linux_amd64.zip
 unzip terraform_1.4.6_linux_amd64.zip
 chmod +x terraform
 rm terraform_1.4.6_linux_amd64.zip
-EOF
+'
 
-# Add Terraform to Jenkins' environment (Global for All Sessions)
+# Add Terraform to system PATH
 echo 'export PATH=/var/lib/jenkins/tools/terraform:$PATH' | sudo tee /etc/profile.d/terraform.sh
-echo 'export PATH=/var/lib/jenkins/tools/terraform:$PATH' | sudo tee -a /var/lib/jenkins/.bashrc
-echo 'export PATH=/var/lib/jenkins/tools/terraform:$PATH' | sudo tee -a /var/lib/jenkins/.profile
 sudo chmod +x /etc/profile.d/terraform.sh
 
-# Reload the environment
-source /etc/profile.d/terraform.sh
+# Add to Jenkins environment
+sudo -u jenkins bash -c 'echo "export PATH=/var/lib/jenkins/tools/terraform:$PATH" >> /var/lib/jenkins/.bashrc'
+sudo -u jenkins bash -c 'echo "export PATH=/var/lib/jenkins/tools/terraform:$PATH" >> /var/lib/jenkins/.profile'
 
-# Verify Terraform Installation Inside Jenkins
-echo "Terraform installed inside Jenkins at /var/lib/jenkins/tools/terraform"
-sudo -u jenkins /var/lib/jenkins/tools/terraform/terraform --version
+# Verify installation
+sudo -u jenkins bash -c '/var/lib/jenkins/tools/terraform/terraform --version'
 
 
 
