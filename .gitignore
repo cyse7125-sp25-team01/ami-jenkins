@@ -1,16 +1,28 @@
-# Cache objects
+# Packer cache directory
 packer_cache/
 
-# Crash log
+# Packer crash logs
 crash.log
 
-# https://www.packer.io/guides/hcl/variables
-# Exclude all .pkrvars.hcl files, which are likely to contain sensitive data, 
-# such as password, private keys, and other secrets. These should not be part of 
-# version control as they are data points which are potentially sensitive and 
-# subject to change depending on the environment.
-#
+# Ignore all Packer variable files (contain secrets)
 *.pkrvars.hcl
 
-# For built boxes
+# Ignore built Packer box files
 *.box
+
+# Ignore Terraform files if using Terraform with Packer
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+
+# Ignore temporary files and logs
+*.log
+*.tmp
+*.bak
+.DS_Store
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+*.iml
