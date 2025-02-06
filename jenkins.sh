@@ -144,7 +144,7 @@ sudo -u jenkins bash -c 'echo "export PATH=/var/lib/jenkins/tools/terraform:$PAT
 sudo -u jenkins bash -c 'echo "export PATH=/var/lib/jenkins/tools/terraform:$PATH" >> /var/lib/jenkins/.profile'
 
 # Verify installation
-sudo -u jenkins bash -c '/var/lib/jenkins/tools/terraform/terraform --version'
+sudo -u jenkins bash -c 'cd /var/lib/jenkins/tools/terraform && ./terraform --version'
 
 
 
