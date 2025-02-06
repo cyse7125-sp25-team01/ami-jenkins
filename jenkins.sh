@@ -146,5 +146,92 @@ sudo -u jenkins bash -c 'echo "export PATH=/var/lib/jenkins/tools/terraform:$PAT
 # Verify installation
 sudo -u jenkins bash -c 'cd /var/lib/jenkins/tools/terraform && ./terraform --version'
 
+echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline..."
+cat <<EOF > create_multibranch_pipeline.groovy
+import jenkins.model.*
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.*
+import org.jenkinsci.plugins.github_branch_source.*
+import org.jenkinsci.plugins.workflow.multibranch.*
+import jenkins.branch.*
+import hudson.util.Secret
+
+// Jenkins instance
+def jenkins = Jenkins.instance
+
+// GitHub App Credentials Details
+def credentialsId = "CloudJenkinsBuild"
+def appId = "1135780"
+def privateKey = Secret.fromString('''-----BEGIN PRIVATE KEY-----
+                                      MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4L/3fXkV7hWmO
+                                      NKs/spAHQygKWlVrhVNMwpOroeE4vbZK2mW7nzqVfDj2mWb3Q1BkeKBEq1M0rh9t
+                                      eqwfM44bOdFOj6+TtLL1H06L7Ddp2S+nH9w1OIsdBsv5mv6YTCbcfh9TZP226y/f
+                                      r88Jre7m3PcJiSKtRnl1wrg/ynp2wle9rC6zw9Qb57b/6+FKWAPTuqs/b+GKdyLQ
+                                      BimoesDa+IVprc3mtIYWXzVVSc8boobaWf1n3t1mv16gqJwLwtHhDP9xHfYwdmmZ
+                                      Tjb3xKX5gKgBjbOCPA528rL/g43Z0YOVQ4X7H1TR+QSEKxypo8D/eM12Q1t20Tjh
+                                      wUl4BTzxAgMBAAECggEBAKv+NKU2lM+Jf04JpLgweAowDd3NCOMEdwrAz8B/w56G
+                                      mQlA86rGP6CDhXXRPbM7qoCHm7FEAsi4qCRFXyErtVF7JhakWiIlpM780w4aIIy5
+                                      AKShPbJ9AHq0dBi7QW7Z/Zf8NihbsAf1ipjoxP6W6vWt9Ql0g2sm2hi7Ie5/luf5
+                                      cPZi4Ozi2M78opij+R7JTN50Vxlp/jQXImQYERYMQM+THKAMukL24LRiUJXpFfTE
+                                      YeNmQhsH1cEKOVCGulzD8I2T+G2hreBsdMf4Xv2JZ9dtOU2ZJwTw0C2RfhmakBzV
+                                      vAqwPatby++hD7Ga/cPxB/JNKj8h+LgTy7TdAmW001kCgYEA3PvslwMKeC69Tpkb
+                                      Dxda1A/y/nXHKGKj56X9w8/86zOg0xtBFoCXlb0pUKkDR4fi0+QMRWKtSneYbb6v
+                                      ISWQx3qarxtCqv6lGaGX5Yoge6NFHQTEwBNjEWx8QR09rW63JcQ4pJm3XM/s8rkt
+                                      4UL4apydSask/8ZnQJ2LrLlPTjsCgYEA1V9v1Mx1kX8Xvo+IM+XCED//XwYtHOxV
+                                      0Ya82ovoyR0Dw9zBMIKyJQRwZQcPOHueeUtSONJ+g/JOaV7u5sBJXD3AL+rtOYhu
+                                      saRpoPEdpX5T5wnK6hZkPZfyQkiSuN+aqw1ncYiFT/LMsp2B1x5sTmp3VakVaCeZ
+                                      EIR+M4cNksMCgYEAxiVuQwoK/TCLtko6pRF/895JODlLVr770N5Z6JY6ZntonWI2
+                                      voKXaUCwJw8lTaJelThKeHy+faM3HlB4n/QbGYKp6JE8+i5Sw+TNWpi7/6CqfBam
+                                      hMPddOYdlBUwFK7NsiN71ruuWp5mDE5XAUEXliDQOBoplt7D/oBFmZ6fqbkCgYBb
+                                      M0utfSbTZatUfC0PYaktIO2aRB2MO0gDIsAd+acqLwio8vZwMazLPbZ8uCO9VLlL
+                                      xvIB75a79xmk2DrszkuM7afz00pKSRJnQ4sSi3zMe86I9hqRK7j0yrl1s2djNc/6
+                                      RORuFphEr9bmkYQp2osYiVEwf/Dyb9pwwPDgPV2D2QKBgCCefx12fOI/+COsnsqR
+                                      b6IicvgyczSyNsZmYaYM5VfsFkMBopafu9RNn0JviDBx4YR8lvTvtHd2FDXx6dMZ
+                                      UFdcdyhdN+8FSzWl3oi0Z5p9rdeR1qm4ZyW9nANx7zR6+5VcsZjvvG3U9Qzeijxa
+                                      lYRsmLsk6MDQIqHLNdhiB3Dw
+                                      -----END PRIVATE KEY-----
+''')
+
+// Check if credentials exist
+def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+def existingCredentials = store.getCredentials(Domain.global()).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    println "Creating new GitHub App credentials..."
+    def creds = new GitHubAppCredentials(CredentialsScope.GLOBAL, credentialsId, "GitHub App", appId, privateKey)
+    store.addCredentials(Domain.global(), creds)
+} else {
+    println "GitHub App credentials already exist."
+}
+
+// Pipeline Configuration
+def pipelineName = "tf-gcp-infra-pipeline"
+def repoOwner = "cyse7125-sp25-team01"
+def repoName = "tf-gcp-infra"
+
+// Check if pipeline exists
+def existingJob = jenkins.getItem(pipelineName)
+if (!existingJob) {
+    println "Creating Multibranch Pipeline: ${pipelineName}"
+
+    def mbp = new WorkflowMultiBranchProject(jenkins, pipelineName)
+
+    def source = new GitHubSCMSource(repoOwner, repoName)
+    source.setCredentialsId(credentialsId)
+    source.setTraits([new BranchDiscoveryTrait(3), new OriginPullRequestDiscoveryTrait(2)])
+
+    mbp.getSourcesList().add(new BranchSource(source))
+    mbp.setProjectFactory(new WorkflowBranchProjectFactory())
+
+    jenkins.add(mbp, pipelineName)
+    mbp.scheduleBuild()
+}
+
+jenkins.save()
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline.groovy
+echo "Jenkins Multibranch Pipeline setup complete!"
+
 
 
