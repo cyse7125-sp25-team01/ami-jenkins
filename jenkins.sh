@@ -216,5 +216,8 @@ EOF
 java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline.groovy
 echo "Jenkins Multibranch Pipeline setup complete!"
 
+sudo usermod -aG docker jenkins
+sudo systemctl restart jenkins
+
 
 
