@@ -12,7 +12,7 @@ echo "Installing Docker..."
 sudo apt install -y docker.io
 sudo systemctl enable docker
 sudo systemctl start docker
-sudo usermod -aG docker $USER
+sudo usermod -aG docker jenkins
 
 wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo apt-key add -
 sudo add-apt-repository -y https://packages.adoptium.net/artifactory/deb
@@ -132,12 +132,12 @@ import jenkins.model.*
 import com.cloudbees.plugins.credentials.*
 import com.cloudbees.plugins.credentials.domains.*
 import com.cloudbees.plugins.credentials.impl.*
-import hudson.plugins.git.*
+import org.jenkinsci.plugins.github_branch_source.*
 import jenkins.branch.*
 import org.jenkinsci.plugins.workflow.multibranch.*
-import jenkins.plugins.git.*
 import com.cloudbees.plugins.credentials.common.*
 
+// Jenkins instance
 def jenkins = Jenkins.instance
 
 // Credentials setup
@@ -145,7 +145,7 @@ def credentialsId = "CloudJenkinsGitHubPAT"
 def gitUsername = "LogeshwaranYogalakshmiSingaravadivelu"
 def gitPersonalAccessToken = "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"
 
-// Create credentials
+// Create credentials if not exists
 def store = SystemCredentialsProvider.getInstance().getStore()
 def existingCredentials = CredentialsProvider.lookupCredentials(
     UsernamePasswordCredentialsImpl.class,
@@ -167,17 +167,39 @@ if (!existingCredentials) {
 
 // Pipeline setup
 def pipelineName = "tf-gcp-infra-pipeline"
-def repoUrl = "https://github.com/cyse7125-sp25-team01/tf-gcp-infra.git"
+def repoOwner = "cyse7125-sp25-team01"
+def repoName = "tf-gcp-infra"
 
 def existingJob = jenkins.getItem(pipelineName)
-if (!existingJob) {
-    def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
-    def gitSource = new GitSCMSource(repoUrl)
-    gitSource.setCredentialsId(credentialsId)
 
-    def branchSource = new BranchSource(gitSource)
-    multibranchProject.getSourcesList().add(branchSource)
+if (!existingJob) {
+    println "Creating GitHub Multibranch Pipeline: ${pipelineName}"
+
+    // Create a new multibranch pipeline
+    def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
+
+    // GitHub SCM Source
+    def githubSource = new GitHubSCMSource(repoOwner, repoName)
+    githubSource.credentialsId = credentialsId  // Keep this as-is per your request
+
+    // Enable behaviors:
+    def traits = [
+        new OriginPullRequestDiscoveryTrait(2), // Discover PRs from origin: Merge with target branch
+        new ForkPullRequestDiscoveryTrait(2, new ForkPullRequestDiscoveryTrait.TrustPermission()) // Discover PRs from forks: Trust users with Admin/Write permission
+    ]
+
+    // Fix: Use addAll() instead of replaceBy()
+    githubSource.getTraits().addAll(traits)
+
+    // Add GitHub source to pipeline
+    multibranchProject.getSourcesList().add(new BranchSource(githubSource))
+
+    // Schedule build
     multibranchProject.scheduleBuild()
+
+    println "GitHub Multibranch Pipeline setup complete!"
+} else {
+    println "Pipeline '${pipelineName}' already exists."
 }
 
 jenkins.save()
