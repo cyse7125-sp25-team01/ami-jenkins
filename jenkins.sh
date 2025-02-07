@@ -7,6 +7,13 @@ sudo apt install -y nginx certbot python3-certbot-nginx
 sudo systemctl enable nginx
 sudo systemctl start nginx
 
+# Install Docker
+echo "Installing Docker..."
+sudo apt install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker $USER
+
 wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo apt-key add -
 sudo add-apt-repository -y https://packages.adoptium.net/artifactory/deb
 sudo apt update -y
