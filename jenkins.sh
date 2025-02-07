@@ -49,6 +49,12 @@ JENKINS_LOCATION_URL="***"
 DOMAIN="***"
 NGINX_CONF="***"
 NGINX_LINK="***"
+CREDENTIALS_ID="***"
+GIT_USERNAME="***"
+GIT_PERSONAL_ACCESS_TOKEN="***"
+PIPELINE_NAME="***"
+REPO_OWNER="***"
+REPO_NAME="***"
 
 if sudo [ -f "$ADMIN_PASSWORD_FILE" ]; then
     sudo cat "$ADMIN_PASSWORD_FILE" | sudo tee /tmp/initialAdminPassword > /dev/null
