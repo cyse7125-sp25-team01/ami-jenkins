@@ -13,6 +13,8 @@ sudo apt install -y docker.io
 sudo systemctl enable docker
 sudo systemctl start docker
 sudo usermod -aG docker jenkins
+sudo chmod 666 /var/run/docker.sock
+newgrp docker
 
 wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo apt-key add -
 sudo add-apt-repository -y https://packages.adoptium.net/artifactory/deb
@@ -141,9 +143,9 @@ import com.cloudbees.plugins.credentials.common.*
 def jenkins = Jenkins.instance
 
 // Credentials setup
-def credentialsId = "CloudJenkinsGitHubPAT"
-def gitUsername = "LogeshwaranYogalakshmiSingaravadivelu"
-def gitPersonalAccessToken = "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"
+def credentialsId = "$CREDENTIALS_ID"
+def gitUsername = "$GIT_USERNAME"
+def gitPersonalAccessToken = "$GIT_PERSONAL_ACCESS_TOKEN"
 
 // Create credentials if not exists
 def store = SystemCredentialsProvider.getInstance().getStore()
@@ -166,9 +168,9 @@ if (!existingCredentials) {
 }
 
 // Pipeline setup
-def pipelineName = "tf-gcp-infra-pipeline"
-def repoOwner = "cyse7125-sp25-team01"
-def repoName = "tf-gcp-infra"
+def pipelineName = "$PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$REPO_NAME"
 
 def existingJob = jenkins.getItem(pipelineName)
 
