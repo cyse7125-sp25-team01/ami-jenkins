@@ -7,14 +7,15 @@ sudo apt install -y nginx certbot python3-certbot-nginx
 sudo systemctl enable nginx
 sudo systemctl start nginx
 
-# Install Docker
-echo "Installing Docker..."
-sudo apt install -y docker.io
-sudo systemctl enable docker
-sudo systemctl start docker
-sudo usermod -aG docker jenkins
-sudo chmod 666 /var/run/docker.sock
-newgrp docker
+sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+wget -O- https://apt.releases.hashicorp.com/gpg | \
+gpg --dearmor | \
+sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update -y
+sudo apt-get install terraform -y
 
 wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo apt-key add -
 sudo add-apt-repository -y https://packages.adoptium.net/artifactory/deb
@@ -215,9 +216,6 @@ EOF
 
 java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline.groovy
 echo "Jenkins Multibranch Pipeline setup complete!"
-
-sudo usermod -aG docker jenkins
-sudo systemctl restart jenkins
 
 
 
