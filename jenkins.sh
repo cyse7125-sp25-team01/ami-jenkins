@@ -70,6 +70,7 @@ DOCKER_PERSONAL_ACCESS_TOKEN="***"
 STATIC_SITE_PIPELINE_NAME="***"
 STATIC_SITE_REPO_NAME="***"
 
+
 if sudo [ -f "$ADMIN_PASSWORD_FILE" ]; then
     sudo cat "$ADMIN_PASSWORD_FILE" | sudo tee /tmp/initialAdminPassword > /dev/null
     echo "InitialAdminPassword stored in /tmp/initialAdminPassword"
@@ -212,7 +213,7 @@ if (!existingWebhookSecret) {
 def existingJob = jenkins.getItem(pipelineName)
 
 if (!existingJob) {
-    println "Creating GitHub Multibranch Pipeline: ${pipelineName}"
+    println("Creating GitHub Multibranch Pipeline: "+ pipelineName)
 
     def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
     
@@ -232,7 +233,7 @@ if (!existingJob) {
 
     println "GitHub Multibranch Pipeline setup complete!"
 } else {
-    println "Pipeline '${pipelineName}' already exists."
+    println("Pipeline "+ pipelineName +" already exists.")
 }
 
 jenkins.save()
@@ -271,7 +272,8 @@ def dockerUsername = "$DOCKER_USERNAME"
 def dockerPersonalAccessToken = "$DOCKER_PERSONAL_ACCESS_TOKEN"
 def github_webhook_secretId = "$GITHUB_WEBHOOK_ID"
 def github_webhook_secret = "$GITHUB_WEBHOOK_SECRET"
-def repoUrl = "https://github.com/${repoOwner}/${repoName}.git"
+def repoUrl = "https://github.com/"+repoOwner+"/"+repoName+".git"
+
 
 def store = SystemCredentialsProvider.getInstance().getStore()
 def existingCredentials = CredentialsProvider.lookupCredentials(
@@ -311,7 +313,7 @@ if (!existingWebhookSecret) {
 
 def job = jenkins.getItem(jobName)
 if (job) {
-    println("Job '${jobName}' already exists. Deleting and recreating it.")
+    println("Job "+ jobName+ "already exists. Deleting and recreating it.")
     job.delete()
 }
 
@@ -346,5 +348,5 @@ trigger.start(job, false)
 EOF
 
 java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < static-site-pipeline.groovy
-echo "Jenkins ultibranch Pipeline setup complete!"
+echo "Jenkins Pipeline setup complete!"
 
