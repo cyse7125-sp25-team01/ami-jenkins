@@ -91,7 +91,7 @@ fi
 
 wget http://localhost:8080/jnlpJars/jenkins-cli.jar -O jenkins-cli.jar
 
-java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) install-plugin workflow-aggregator pipeline-stage-view pipeline-rest-api job-dsl groovy mailer git credentials-binding build-timeout junit artifactdeployer blueocean github golang maven-plugin kubernetes pipeline-utility-steps role-strategy oidc-provider docker-plugin docker-workflow  -restart
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) install-plugin workflow-aggregator pipeline-stage-view pipeline-rest-api job-dsl groovy mailer git credentials-binding build-timeout junit artifactdeployer blueocean github golang maven-plugin kubernetes pipeline-utility-steps role-strategy oidc-provider docker-plugin conventional-commits docker-workflow  -restart
 
 echo "Waiting for Jenkins to restart..."
 sleep 60
