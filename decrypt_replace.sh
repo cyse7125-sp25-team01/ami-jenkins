@@ -27,7 +27,18 @@ DOCKER_CREDENTIALS_ID=$(echo "$decrypted_secrets" | grep docker_credentials_id |
 DOCKER_USERNAME=$(echo "$decrypted_secrets" | grep dockerUsername | awk '{print $2}')
 DOCKER_PERSONAL_ACCESS_TOKEN=$(echo "$decrypted_secrets" | grep dockerPersonalAccessToken | awk '{print $2}')
 STATIC_SITE_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep static-site-pipeline | awk '{print $2}')
+STATIC_SITE_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep static-site-actions-pipeline | awk '{print $2}')
 STATIC_SITE_REPO_NAME=$(echo "$decrypted_secrets" | grep static-site-repo_name | awk '{print $2}')
+STATIC_SITE_K8S_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep static-site-k8s-pipeline | awk '{print $2}')
+WEBAPP_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep webapp-pipeline | awk '{print $2}')
+WEBAPP_HELLO_WORLD_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-pipeline | awk '{print $2}')
+
+STATIC_SITE_K8S_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep static-site-k8s-actions-pipeline | awk '{print $2}')
+STATIC_SITE_K8S_REPO_NAME=$(echo "$decrypted_secrets" | grep static-site-k8s-repo_name | awk '{print $2}')
+WEBAPP_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep webapp-actions-pipeline | awk '{print $2}')
+WEBAPP_REPO_NAME=$(echo "$decrypted_secrets" | grep webapp-repo_name | awk '{print $2}')
+WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-actions-pipeline | awk '{print $2}')
+WEBAPP_HELLO_WORLD_REPO_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-repo_name | awk '{print $2}')
 
 sed -i "s/ADMIN_USERNAME=\"\*\*\*\"/ADMIN_USERNAME=\"$ADMIN_USERNAME\"/" jenkins.sh
 sed -i "s/ADMIN_PASSWORD=\"\*\*\*\"/ADMIN_PASSWORD=\"$ADMIN_PASSWORD\"/" jenkins.sh
@@ -54,4 +65,14 @@ sed -i "s/DOCKER_CREDENTIALS_ID=\"\*\*\*\"/DOCKER_CREDENTIALS_ID=\"$DOCKER_CREDE
 sed -i "s/DOCKER_USERNAME=\"\*\*\*\"/DOCKER_USERNAME=\"$DOCKER_USERNAME\"/" jenkins.sh
 sed -i "s/DOCKER_PERSONAL_ACCESS_TOKEN=\"\*\*\*\"/DOCKER_PERSONAL_ACCESS_TOKEN=\"$DOCKER_PERSONAL_ACCESS_TOKEN\"/" jenkins.sh
 sed -i "s/STATIC_SITE_PIPELINE_NAME=\"\*\*\*\"/STATIC_SITE_PIPELINE_NAME=\"$STATIC_SITE_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/STATIC_SITE_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/STATIC_SITE_ACTIONS_PIPELINE_NAME=\"$STATIC_SITE_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
 sed -i "s/STATIC_SITE_REPO_NAME=\"\*\*\*\"/STATIC_SITE_REPO_NAME=\"$STATIC_SITE_REPO_NAME\"/" jenkins.sh
+sed -i "s/STATIC_SITE_K8S_PIPELINE_NAME=\"\*\*\*\"/STATIC_SITE_K8S_PIPELINE_NAME=\"$STATIC_SITE_K8S_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/STATIC_SITE_K8S_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/STATIC_SITE_K8S_ACTIONS_PIPELINE_NAME=\"$STATIC_SITE_K8S_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/STATIC_SITE_K8S_REPO_NAME=\"\*\*\*\"/STATIC_SITE_K8S_REPO_NAME=\"$STATIC_SITE_K8S_REPO_NAME\"/" jenkins.sh
+sed -i "s/WEBAPP_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_PIPELINE_NAME=\"$WEBAPP_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/WEBAPP_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_ACTIONS_PIPELINE_NAME=\"$WEBAPP_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/WEBAPP_REPO_NAME=\"\*\*\*\"/WEBAPP_REPO_NAME=\"$WEBAPP_REPO_NAME\"/" jenkins.sh
+sed -i "s/WEBAPP_HELLO_WORLD_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_PIPELINE_NAME=\"$WEBAPP_HELLO_WORLD_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME=\"$WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/WEBAPP_HELLO_WORLD_REPO_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_REPO_NAME=\"$WEBAPP_HELLO_WORLD_REPO_NAME\"/" jenkins.sh
