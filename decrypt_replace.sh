@@ -39,6 +39,8 @@ WEBAPP_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep webapp-actions-p
 WEBAPP_REPO_NAME=$(echo "$decrypted_secrets" | grep webapp-repo_name | awk '{print $2}')
 WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-actions-pipeline | awk '{print $2}')
 WEBAPP_HELLO_WORLD_REPO_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-repo_name | awk '{print $2}')
+WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-k8s-actions-pipeline | awk '{print $2}')
+WEBAPP_HELLO_WORLD_K8S_REPO_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-k8s-repo_name | awk '{print $2}')
 
 sed -i "s/ADMIN_USERNAME=\"\*\*\*\"/ADMIN_USERNAME=\"$ADMIN_USERNAME\"/" jenkins.sh
 sed -i "s/ADMIN_PASSWORD=\"\*\*\*\"/ADMIN_PASSWORD=\"$ADMIN_PASSWORD\"/" jenkins.sh
@@ -76,3 +78,5 @@ sed -i "s/WEBAPP_REPO_NAME=\"\*\*\*\"/WEBAPP_REPO_NAME=\"$WEBAPP_REPO_NAME\"/" j
 sed -i "s/WEBAPP_HELLO_WORLD_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_PIPELINE_NAME=\"$WEBAPP_HELLO_WORLD_PIPELINE_NAME\"/" jenkins.sh
 sed -i "s/WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME=\"$WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
 sed -i "s/WEBAPP_HELLO_WORLD_REPO_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_REPO_NAME=\"$WEBAPP_HELLO_WORLD_REPO_NAME\"/" jenkins.sh
+sed -i "s/WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME=\"$WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/WEBAPP_HELLO_WORLD_K8S_REPO_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_K8S_REPO_NAME=\"$WEBAPP_HELLO_WORLD_K8S_REPO_NAME\"/" jenkins.sh

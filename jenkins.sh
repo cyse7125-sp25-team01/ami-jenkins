@@ -47,39 +47,41 @@ sleep 30
 
 ADMIN_PASSWORD_FILE="/var/lib/jenkins/secrets/initialAdminPassword"
 
-ADMIN_USERNAME="team1"
-ADMIN_PASSWORD="Manas@123"
-ADMIN_FIRSTNAME="CSYE7125"
-ADMIN_LASTNAME="Admin"
+ADMIN_USERNAME="***"
+ADMIN_PASSWORD="***"
+ADMIN_FIRSTNAME="***"
+ADMIN_LASTNAME="***"
 ADMIN_FULLNAME="$ADMIN_FIRSTNAME $ADMIN_LASTNAME"
-ADMIN_EMAIL="manas.gourabathini@gmail.com"
-JENKINS_LOCATION_URL="https://jenkins.csye7125-team01.store"
-DOMAIN="jenkins.csye7125-team01.store"
-NGINX_CONF="/etc/nginx/sites-available/jenkins"
-NGINX_LINK="/etc/nginx/sites-enabled/jenkins"
-REPO_OWNER="cyse7125-sp25-team01"
-GITHUB_WEBHOOK_ID="Github-Webhook-Secret"
-GITHUB_WEBHOOK_SECRET="Zs6g6ChBJ9eD0V8yG5AC"
-GIT_CREDENTIALS_ID="CloudJenkinsGitHubPAT"
-GIT_USERNAME="LogeshwaranYogalakshmiSingaravadivelu"
-GIT_PERSONAL_ACCESS_TOKEN="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"
-TF_GCP_INFRA_PIPELINE_NAME="tf-gcp-infra-pipeline"
-TF_GCP_INFRA_REPO_NAME="tf-gcp-infra"
-DOCKER_CREDENTIALS_ID="CloudJenkinsDockerHubPAT"
-DOCKER_USERNAME="saimanasg"
-DOCKER_PERSONAL_ACCESS_TOKEN="dckr_pat_DOOhRG3cNdBQ82kBNsrJ3ecNEqM"
-STATIC_SITE_PIPELINE_NAME="static-site-pipeline"
-STATIC_SITE_ACTIONS_PIPELINE_NAME="static-site-actions-pipeline"
-STATIC_SITE_REPO_NAME="static-site"
-STATIC_SITE_K8S_PIPELINE_NAME="static-site-k8s-pipeline"
-STATIC_SITE_K8S_ACTIONS_PIPELINE_NAME="static-site-k8s-actions-pipeline"
-STATIC_SITE_K8S_REPO_NAME="static-site-k8s"
-WEBAPP_PIPELINE_NAME="webapp-pipeline"
-WEBAPP_ACTIONS_PIPELINE_NAME="webapp-actions-pipeline"
-WEBAPP_REPO_NAME="webapp"
-WEBAPP_HELLO_WORLD_PIPELINE_NAME="webapp-hello-world-pipeline"
-WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME="webapp-hello-world-actions-pipeline"
-WEBAPP_HELLO_WORLD_REPO_NAME="webapp-hello-world"
+ADMIN_EMAIL="***"
+JENKINS_LOCATION_URL="***"
+DOMAIN="***"
+NGINX_CONF="***"
+NGINX_LINK="***"
+REPO_OWNER="***"
+GITHUB_WEBHOOK_ID="***"
+GITHUB_WEBHOOK_SECRET="***"
+GIT_CREDENTIALS_ID="***"
+GIT_USERNAME="***"
+GIT_PERSONAL_ACCESS_TOKEN="***"
+TF_GCP_INFRA_PIPELINE_NAME="***"
+TF_GCP_INFRA_REPO_NAME="***"
+DOCKER_CREDENTIALS_ID="***"
+DOCKER_USERNAME="***"
+DOCKER_PERSONAL_ACCESS_TOKEN="***"
+STATIC_SITE_PIPELINE_NAME="***"
+STATIC_SITE_ACTIONS_PIPELINE_NAME="***"
+STATIC_SITE_REPO_NAME="***"
+STATIC_SITE_K8S_PIPELINE_NAME="***"
+STATIC_SITE_K8S_ACTIONS_PIPELINE_NAME="***"
+STATIC_SITE_K8S_REPO_NAME="***"
+WEBAPP_PIPELINE_NAME="***"
+WEBAPP_ACTIONS_PIPELINE_NAME="***"
+WEBAPP_REPO_NAME="***"
+WEBAPP_HELLO_WORLD_PIPELINE_NAME="***"
+WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME="***"
+WEBAPP_HELLO_WORLD_REPO_NAME="***"
+WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME="***"
+WEBAPP_HELLO_WORLD_K8S_REPO_NAME="***"
 
 if sudo [ -f "$ADMIN_PASSWORD_FILE" ]; then
     sudo cat "$ADMIN_PASSWORD_FILE" | sudo tee /tmp/initialAdminPassword > /dev/null
@@ -875,3 +877,78 @@ EOF
 
 java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < webapp-hello-world-pipeline.groovy
 echo "Jenkins Pipeline setup complete Webapp!"
+
+echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline webapp hello world k8s..."
+cat <<EOF > create_multibranch_pipeline_webapp-hello-world-k8s.groovy
+import jenkins.model.*
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.common.*
+import org.jenkinsci.plugins.github_branch_source.*
+import org.jenkinsci.plugins.workflow.multibranch.*
+import jenkins.branch.*
+import hudson.util.Secret
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+
+def jenkins = Jenkins.instance
+
+def credentialsId = "$GIT_CREDENTIALS_ID"
+def gitUsername = "$GIT_USERNAME"
+def gitPersonalAccessToken = "$GIT_PERSONAL_ACCESS_TOKEN"
+def pipelineName = "$WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$WEBAPP_HELLO_WORLD_K8S_REPO_NAME"
+
+def store = SystemCredentialsProvider.getInstance().getStore()
+def existingCredentials = CredentialsProvider.lookupCredentials(
+    UsernamePasswordCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    def credentials = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        credentialsId,
+        "GitHub Personal Access Token",
+        gitUsername,
+        gitPersonalAccessToken
+    )
+    store.addCredentials(Domain.global(), credentials)
+}
+
+def existingJob = jenkins.getItem(pipelineName)
+
+if (!existingJob) {
+    println("Creating GitHub Multibranch Pipeline: "+ pipelineName)
+
+    def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
+    
+    def githubSource = new GitHubSCMSource(repoOwner, repoName)
+    githubSource.credentialsId = credentialsId  // Keep this as-is per your request
+    def traits = [
+        new OriginPullRequestDiscoveryTrait(2), // Discover PRs from origin: Merge with target branch
+        new ForkPullRequestDiscoveryTrait(2, new ForkPullRequestDiscoveryTrait.TrustPermission()) // Discover PRs from forks: Trust users with Admin/Write permission
+    ]
+    
+    githubSource.getTraits().addAll(traits)
+    
+    multibranchProject.getSourcesList().add(new BranchSource(githubSource))
+    def projectFactory = new WorkflowBranchProjectFactory()
+    projectFactory.setScriptPath("Jenkinsfile")
+    multibranchProject.setProjectFactory(projectFactory)
+    multibranchProject.scheduleBuild()
+
+    println "GitHub Multibranch Pipeline setup complete!"
+} else {
+    println("Pipeline "+ pipelineName +" already exists.")
+}
+
+jenkins.save()
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline_webapp-hello-world-k8s.groovy
+echo "Jenkins Multibranch Pipeline setup complete - webapp-hello-world-k8s!"
