@@ -1,6 +1,6 @@
 # Packer cache directory
 packer_cache/
-
+.idea
 # Packer crash logs
 crash.log
 
