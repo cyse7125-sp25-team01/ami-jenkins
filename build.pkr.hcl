@@ -83,7 +83,7 @@ source "amazon-ebs" "custom_ami" {
   tags = {
     Name = "Jenkins AMI"
     Date = local.timestamp
-  }
+
 }
 
 build {
