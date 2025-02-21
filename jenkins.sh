@@ -499,7 +499,7 @@ if (!existingJob) {
     
     multibranchProject.getSourcesList().add(new BranchSource(githubSource))
     def projectFactory = new WorkflowBranchProjectFactory()
-    projectFactory.setScriptPath("JenkinsfileActions")
+    projectFactory.setScriptPath("Jenkinsfile")
     multibranchProject.setProjectFactory(projectFactory)
     multibranchProject.scheduleBuild()
 
@@ -649,7 +649,7 @@ if (!existingJob) {
     
     multibranchProject.getSourcesList().add(new BranchSource(githubSource))
     def projectFactory = new WorkflowBranchProjectFactory()
-    projectFactory.setScriptPath("JenkinsfileActions")
+    projectFactory.setScriptPath("Jenkinsfile")
     multibranchProject.setProjectFactory(projectFactory)
     multibranchProject.scheduleBuild()
 
@@ -725,7 +725,7 @@ if (!existingJob) {
     
     multibranchProject.getSourcesList().add(new BranchSource(githubSource))
     def projectFactory = new WorkflowBranchProjectFactory()
-    projectFactory.setScriptPath("JenkinsfileActions")
+    projectFactory.setScriptPath("Jenkinsfile")
     multibranchProject.setProjectFactory(projectFactory)
     multibranchProject.scheduleBuild()
 
