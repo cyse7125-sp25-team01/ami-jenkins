@@ -2,6 +2,7 @@
 
 sudo apt update -y
 sudo apt install -y unzip wget tar apt-transport-https ca-certificates curl 
+sudo apt-get update && sudo apt-get -y install golang-go 
 sudo apt install -y nginx certbot python3-certbot-nginx npm
 sudo npm install -g @commitlint/config-conventional @commitlint/cli
 
@@ -361,6 +362,82 @@ EOF
 
 java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < static-site-pipeline.groovy
 echo "Jenkins Pipeline setup complete!"
+
+
+echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline webapp hello world k8s..."
+cat <<EOF > create_multibranch_pipeline_webapp-hello-world-k8s.groovy
+import jenkins.model.*
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.common.*
+import org.jenkinsci.plugins.github_branch_source.*
+import org.jenkinsci.plugins.workflow.multibranch.*
+import jenkins.branch.*
+import hudson.util.Secret
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+
+def jenkins = Jenkins.instance
+
+def credentialsId = "$GIT_CREDENTIALS_ID"
+def gitUsername = "$GIT_USERNAME"
+def gitPersonalAccessToken = "$GIT_PERSONAL_ACCESS_TOKEN"
+def pipelineName = "$WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$WEBAPP_HELLO_WORLD_K8S_REPO_NAME"
+
+def store = SystemCredentialsProvider.getInstance().getStore()
+def existingCredentials = CredentialsProvider.lookupCredentials(
+    UsernamePasswordCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    def credentials = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        credentialsId,
+        "GitHub Personal Access Token",
+        gitUsername,
+        gitPersonalAccessToken
+    )
+    store.addCredentials(Domain.global(), credentials)
+}
+
+def existingJob = jenkins.getItem(pipelineName)
+
+if (!existingJob) {
+    println("Creating GitHub Multibranch Pipeline: "+ pipelineName)
+
+    def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
+    
+    def githubSource = new GitHubSCMSource(repoOwner, repoName)
+    githubSource.credentialsId = credentialsId  // Keep this as-is per your request
+    def traits = [
+        new OriginPullRequestDiscoveryTrait(2), // Discover PRs from origin: Merge with target branch
+        new ForkPullRequestDiscoveryTrait(2, new ForkPullRequestDiscoveryTrait.TrustPermission()) // Discover PRs from forks: Trust users with Admin/Write permission
+    ]
+    
+    githubSource.getTraits().addAll(traits)
+    
+    multibranchProject.getSourcesList().add(new BranchSource(githubSource))
+    def projectFactory = new WorkflowBranchProjectFactory()
+    projectFactory.setScriptPath("Jenkinsfile")
+    multibranchProject.setProjectFactory(projectFactory)
+    multibranchProject.scheduleBuild()
+
+    println "GitHub Multibranch Pipeline setup complete!"
+} else {
+    println("Pipeline "+ pipelineName +" already exists.")
+}
+
+jenkins.save()
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline_webapp-hello-world-k8s.groovy
+echo "Jenkins Multibranch Pipeline setup complete - webapp-hello-world-k8s!"
 
 echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline Static site..."
 cat <<EOF > create_multibranch_pipeline_static_site.groovy
@@ -878,77 +955,3 @@ EOF
 java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < webapp-hello-world-pipeline.groovy
 echo "Jenkins Pipeline setup complete Webapp!"
 
-echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline webapp hello world k8s..."
-cat <<EOF > create_multibranch_pipeline_webapp-hello-world-k8s.groovy
-import jenkins.model.*
-import com.cloudbees.plugins.credentials.*
-import com.cloudbees.plugins.credentials.domains.*
-import com.cloudbees.plugins.credentials.impl.*
-import com.cloudbees.plugins.credentials.common.*
-import com.cloudbees.plugins.credentials.common.*
-import org.jenkinsci.plugins.github_branch_source.*
-import org.jenkinsci.plugins.workflow.multibranch.*
-import jenkins.branch.*
-import hudson.util.Secret
-import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
-
-def jenkins = Jenkins.instance
-
-def credentialsId = "$GIT_CREDENTIALS_ID"
-def gitUsername = "$GIT_USERNAME"
-def gitPersonalAccessToken = "$GIT_PERSONAL_ACCESS_TOKEN"
-def pipelineName = "$WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME"
-def repoOwner = "$REPO_OWNER"
-def repoName = "$WEBAPP_HELLO_WORLD_K8S_REPO_NAME"
-
-def store = SystemCredentialsProvider.getInstance().getStore()
-def existingCredentials = CredentialsProvider.lookupCredentials(
-    UsernamePasswordCredentialsImpl.class,
-    Jenkins.instance,
-    null,
-    Collections.emptyList()
-).find { it.id == credentialsId }
-
-if (!existingCredentials) {
-    def credentials = new UsernamePasswordCredentialsImpl(
-        CredentialsScope.GLOBAL,
-        credentialsId,
-        "GitHub Personal Access Token",
-        gitUsername,
-        gitPersonalAccessToken
-    )
-    store.addCredentials(Domain.global(), credentials)
-}
-
-def existingJob = jenkins.getItem(pipelineName)
-
-if (!existingJob) {
-    println("Creating GitHub Multibranch Pipeline: "+ pipelineName)
-
-    def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
-    
-    def githubSource = new GitHubSCMSource(repoOwner, repoName)
-    githubSource.credentialsId = credentialsId  // Keep this as-is per your request
-    def traits = [
-        new OriginPullRequestDiscoveryTrait(2), // Discover PRs from origin: Merge with target branch
-        new ForkPullRequestDiscoveryTrait(2, new ForkPullRequestDiscoveryTrait.TrustPermission()) // Discover PRs from forks: Trust users with Admin/Write permission
-    ]
-    
-    githubSource.getTraits().addAll(traits)
-    
-    multibranchProject.getSourcesList().add(new BranchSource(githubSource))
-    def projectFactory = new WorkflowBranchProjectFactory()
-    projectFactory.setScriptPath("Jenkinsfile")
-    multibranchProject.setProjectFactory(projectFactory)
-    multibranchProject.scheduleBuild()
-
-    println "GitHub Multibranch Pipeline setup complete!"
-} else {
-    println("Pipeline "+ pipelineName +" already exists.")
-}
-
-jenkins.save()
-EOF
-
-java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline_webapp-hello-world-k8s.groovy
-echo "Jenkins Multibranch Pipeline setup complete - webapp-hello-world-k8s!"
