@@ -337,7 +337,7 @@ def scm = new GitSCM(repoUrl)
 scm.branches = [new BranchSpec("*/main")]
 scm.userRemoteConfigs = [new UserRemoteConfig(repoUrl, null, null, gitcredentialsId)]
 
-def definition = new CpsScmFlowDefinition(scm, "Jenkinsfile")
+def definition = new CpsScmFlowDefinition(scm, "JenkinsfileDocker")
 job.definition = definition
 
 def webhookSecretFromJenkins = CredentialsProvider.lookupCredentials(
@@ -821,7 +821,7 @@ def scm = new GitSCM(repoUrl)
 scm.branches = [new BranchSpec("*/main")]
 scm.userRemoteConfigs = [new UserRemoteConfig(repoUrl, null, null, gitcredentialsId)]
 
-def definition = new CpsScmFlowDefinition(scm, "Jenkinsfile")
+def definition = new CpsScmFlowDefinition(scm, "JenkinsfileDocker")
 job.definition = definition
 
 def webhookSecretFromJenkins = CredentialsProvider.lookupCredentials(
@@ -929,7 +929,7 @@ def scm = new GitSCM(repoUrl)
 scm.branches = [new BranchSpec("*/main")]
 scm.userRemoteConfigs = [new UserRemoteConfig(repoUrl, null, null, gitcredentialsId)]
 
-def definition = new CpsScmFlowDefinition(scm, "Jenkinsfile")
+def definition = new CpsScmFlowDefinition(scm, "JenkinsfileDocker")
 job.definition = definition
 
 def webhookSecretFromJenkins = CredentialsProvider.lookupCredentials(
