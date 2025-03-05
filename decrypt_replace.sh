@@ -42,6 +42,27 @@ WEBAPP_HELLO_WORLD_REPO_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-wor
 WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-k8s-actions-pipeline | awk '{print $2}')
 WEBAPP_HELLO_WORLD_K8S_REPO_NAME=$(echo "$decrypted_secrets" | grep webapp-hello-world-k8s-repo_name | awk '{print $2}')
 
+API_SERVER_REPO_NAME=$(echo "$decrypted_secrets" | grep api-server-repo_name | awk '{print $2}')
+API_SERVER_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep api-server-pipeline | awk '{print $2}')
+API_SERVER_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep api-server-actions-pipeline | awk '{print $2}')
+
+API_DB_REPO_NAME=$(echo "$decrypted_secrets" | grep api-db-repo_name | awk '{print $2}')
+API_DB_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep api-db-pipeline | awk '{print $2}')
+API_DB_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep api-db-actions-pipeline | awk '{print $2}')
+
+HELM_CHARTS_REPO_NAME=$(echo "$decrypted_secrets" | grep helm-charts-repo_name | awk '{print $2}')
+HELM_CHARTS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep helm-charts-pipeline | awk '{print $2}')
+HELM_CHARTS_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep helm-charts-actions-pipeline | awk '{print $2}')
+
+TRACE_DB_REPO_NAME=$(echo "$decrypted_secrets" | grep trace-db-repo_name | awk '{print $2}')
+TRACE_DB_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-db-pipeline | awk '{print $2}')
+TRACE_DB_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-db-actions-pipeline | awk '{print $2}')
+
+TRACE_SERVER_REPO_NAME=$(echo "$decrypted_secrets" | grep trace-server-repo_name | awk '{print $2}')
+TRACE_SERVER_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-server-pipeline | awk '{print $2}')
+TRACE_SERVER_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-server-actions-pipeline | awk '{print $2}')
+
+
 sed -i "s/ADMIN_USERNAME=\"\*\*\*\"/ADMIN_USERNAME=\"$ADMIN_USERNAME\"/" jenkins.sh
 sed -i "s/ADMIN_PASSWORD=\"\*\*\*\"/ADMIN_PASSWORD=\"$ADMIN_PASSWORD\"/" jenkins.sh
 sed -i "s/ADMIN_FIRSTNAME=\"\*\*\*\"/ADMIN_FIRSTNAME=\"$ADMIN_FIRSTNAME\"/" jenkins.sh
@@ -80,3 +101,23 @@ sed -i "s/WEBAPP_HELLO_WORLD_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD
 sed -i "s/WEBAPP_HELLO_WORLD_REPO_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_REPO_NAME=\"$WEBAPP_HELLO_WORLD_REPO_NAME\"/" jenkins.sh
 sed -i "s/WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME=\"$WEBAPP_HELLO_WORLD_K8S_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
 sed -i "s/WEBAPP_HELLO_WORLD_K8S_REPO_NAME=\"\*\*\*\"/WEBAPP_HELLO_WORLD_K8S_REPO_NAME=\"$WEBAPP_HELLO_WORLD_K8S_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/API_SERVER_PIPELINE_NAME=\"\*\*\*\"/API_SERVER_PIPELINE_NAME=\"$API_SERVER_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/API_SERVER_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/API_SERVER_ACTIONS_PIPELINE_NAME=\"$API_SERVER_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/API_SERVER_REPO_NAME=\"\*\*\*\"/API_SERVER_REPO_NAME=\"$API_SERVER_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/API_DB_PIPELINE_NAME=\"\*\*\*\"/API_DB_PIPELINE_NAME=\"$API_DB_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/API_DB_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/API_DB_ACTIONS_PIPELINE_NAME=\"$API_DB_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/API_DB_REPO_NAME=\"\*\*\*\"/API_DB_REPO_NAME=\"$API_DB_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/HELM_CHARTS_PIPELINE_NAME=\"\*\*\*\"/HELM_CHARTS_PIPELINE_NAME=\"$HELM_CHARTS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/HELM_CHARTS_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/HELM_CHARTS_ACTIONS_PIPELINE_NAME=\"$HELM_CHARTS_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/HELM_CHARTS_REPO_NAME=\"\*\*\*\"/HELM_CHARTS_REPO_NAME=\"$HELM_CHARTS_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/TRACE_DB_PIPELINE_NAME=\"\*\*\*\"/TRACE_DB_PIPELINE_NAME=\"$TRACE_DB_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_DB_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/TRACE_DB_ACTIONS_PIPELINE_NAME=\"$TRACE_DB_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_DB_REPO_NAME=\"\*\*\*\"/TRACE_DB_REPO_NAME=\"$TRACE_DB_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/TRACE_SERVER_PIPELINE_NAME=\"\*\*\*\"/TRACE_SERVER_PIPELINE_NAME=\"$TRACE_SERVER_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_SERVER_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/TRACE_SERVER_ACTIONS_PIPELINE_NAME=\"$TRACE_SERVER_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_SERVER_REPO_NAME=\"\*\*\*\"/TRACE_SERVER_REPO_NAME=\"$TRACE_SERVER_REPO_NAME\"/" jenkins.sh
