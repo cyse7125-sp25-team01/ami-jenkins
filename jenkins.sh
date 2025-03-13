@@ -1,13 +1,18 @@
 #!/bin/bash
 
 sudo apt update -y
-sudo apt install -y unzip wget tar apt-transport-https ca-certificates curl 
+sudo apt install -y zip unzip wget tar apt-transport-https ca-certificates curl 
 sudo apt-get update && sudo apt-get -y install golang-go 
 sudo apt install -y nginx certbot python3-certbot-nginx npm
-sudo npm install -g @commitlint/config-conventional @commitlint/cli
+sudo npm install -g @commitlint/config-conventional @commitlint/cli 
 
 sudo systemctl enable nginx
 sudo systemctl start nginx
+
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+sudo npm install -g semantic-release
+sudo npm install -g @semantic-release/commit-analyzer @semantic-release/github @semantic-release/release-notes-generator
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable" -y
@@ -114,7 +119,7 @@ fi
 
 wget http://localhost:8080/jnlpJars/jenkins-cli.jar -O jenkins-cli.jar
 
-java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) install-plugin workflow-aggregator pipeline-stage-view pipeline-rest-api job-dsl groovy mailer git credentials-binding build-timeout junit artifactdeployer blueocean github golang maven-plugin kubernetes pipeline-utility-steps role-strategy oidc-provider docker-plugin conventional-commits docker-workflow  -restart
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) install-plugin workflow-aggregator pipeline-stage-view ws-cleanup pipeline-rest-api job-dsl groovy mailer git credentials-binding build-timeout junit artifactdeployer blueocean github golang maven-plugin kubernetes pipeline-utility-steps role-strategy oidc-provider docker-plugin conventional-commits docker-workflow  -restart
 
 echo "Waiting for Jenkins to restart..."
 sleep 60
@@ -1896,3 +1901,44 @@ EOF
 
 java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < trace-server-pipeline.groovy
 echo "Jenkins Pipeline setup complete trace server!"
+
+
+cat <<EOF > github-secret.groovy
+import jenkins.model.*
+import hudson.model.*
+import org.jenkinsci.plugins.workflow.job.*
+import org.jenkinsci.plugins.workflow.cps.*
+import hudson.plugins.git.*
+import hudson.util.Secret
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import jenkins.plugins.git.*
+import hudson.triggers.*
+import hudson.plugins.git.extensions.impl.CloneOption
+import hudson.triggers.SCMTrigger
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+import com.cloudbees.jenkins.GitHubPushTrigger
+
+
+
+
+def credentialId = "github_token"
+def secretText = "$GIT_PERSONAL_ACCESS_TOKEN" 
+def description = "GitHub Personal Access Token"
+
+def credentialsStore = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+
+def existingCredential = credentialsStore.getCredentials(Domain.global()).find { it.id == credentialId }
+if (existingCredential) {
+    println "Credential with ID '${credentialId}' already exists."
+} else {
+    def newCredential = new StringCredentialsImpl(
+        CredentialsScope.GLOBAL, credentialId, description, new Secret(secretText)
+    )
+    
+    credentialsStore.addCredentials(Domain.global(), newCredential)
+    println "Credential '${credentialId}' created successfully."
+}
+EOF
