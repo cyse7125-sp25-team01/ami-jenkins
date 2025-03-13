@@ -1942,3 +1942,7 @@ if (existingCredential) {
     println "Credential '${credentialId}' created successfully."
 }
 EOF
+
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < github-secret.groovy
+
