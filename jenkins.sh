@@ -4,7 +4,7 @@ sudo apt update -y
 sudo apt install -y zip unzip wget tar apt-transport-https ca-certificates curl 
 sudo apt-get update && sudo apt-get -y install golang-go 
 sudo apt install -y nginx certbot python3-certbot-nginx npm
-sudo npm install -g @commitlint/config-conventional @commitlint/cli 
+
 
 sudo systemctl enable nginx
 sudo systemctl start nginx
@@ -13,7 +13,7 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 sudo npm install -g semantic-release
 sudo npm install -g @semantic-release/commit-analyzer @semantic-release/github @semantic-release/release-notes-generator
-
+sudo npm install -g @commitlint/config-conventional @commitlint/cli 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable" -y
 sudo apt install docker-ce -y
