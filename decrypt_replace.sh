@@ -62,6 +62,9 @@ TRACE_SERVER_REPO_NAME=$(echo "$decrypted_secrets" | grep trace-server-repo_name
 TRACE_SERVER_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-server-pipeline | awk '{print $2}')
 TRACE_SERVER_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-server-actions-pipeline | awk '{print $2}')
 
+HELM_OPERATOR_REPO_NAME=$(echo "$decrypted_secrets" | grep helm-operator-repo_name | awk '{print $2}')
+HELM_OPERATOR_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep db-backup-operator-pipeline | awk '{print $2}')
+HELM_OPERATOR_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep db-backup-operator-actions-pipeline | awk '{print $2}')
 
 sed -i "s/ADMIN_USERNAME=\"\*\*\*\"/ADMIN_USERNAME=\"$ADMIN_USERNAME\"/" jenkins.sh
 sed -i "s/ADMIN_PASSWORD=\"\*\*\*\"/ADMIN_PASSWORD=\"$ADMIN_PASSWORD\"/" jenkins.sh
@@ -121,3 +124,7 @@ sed -i "s/TRACE_DB_REPO_NAME=\"\*\*\*\"/TRACE_DB_REPO_NAME=\"$TRACE_DB_REPO_NAME
 sed -i "s/TRACE_SERVER_PIPELINE_NAME=\"\*\*\*\"/TRACE_SERVER_PIPELINE_NAME=\"$TRACE_SERVER_PIPELINE_NAME\"/" jenkins.sh
 sed -i "s/TRACE_SERVER_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/TRACE_SERVER_ACTIONS_PIPELINE_NAME=\"$TRACE_SERVER_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
 sed -i "s/TRACE_SERVER_REPO_NAME=\"\*\*\*\"/TRACE_SERVER_REPO_NAME=\"$TRACE_SERVER_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/HELM_OPERATOR_PIPELINE_NAME=\"\*\*\*\"/HELM_OPERATOR_PIPELINE_NAME=\"$HELM_OPERATOR_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/HELM_OPERATOR_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/HELM_OPERATOR_ACTIONS_PIPELINE_NAME=\"$HELM_OPERATOR_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/HELM_OPERATOR_REPO_NAME=\"\*\*\*\"/HELM_OPERATOR_REPO_NAME=\"$HELM_OPERATOR_REPO_NAME\"/" jenkins.sh
