@@ -110,6 +110,18 @@ TRACE_SERVER_ACTIONS_PIPELINE_NAME="***"
 HELM_OPERATOR_REPO_NAME="***"
 HELM_OPERATOR_PIPELINE_NAME="***"
 HELM_OPERATOR_ACTIONS_PIPELINE_NAME="***"
+TRACE_CONSUMER_PIPELINE_NAME="***"
+TRACE_CONSUMER_ACTIONS_PIPELINE_NAME="***"
+TRACE_CONSUMER_REPO_NAME="***"
+
+TRACE_PUBSUB_PIPELINE_NAME="***"
+TRACE_PUBSUB_ACTIONS_PIPELINE_NAME="***"
+TRACE_PUBSUB_REPO_NAME="***"
+
+TRACE_FRONTEND_PIPELINE_NAME="***"
+TRACE_FRONTEND_ACTIONS_PIPELINE_NAME="***"
+TRACE_FRONTEND_REPO_NAME="***"
+
 
 
 if sudo [ -f "$ADMIN_PASSWORD_FILE" ]; then
@@ -2132,3 +2144,557 @@ EOF
 
 java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < helm-operator-pipeline.groovy
 echo "Jenkins Pipeline setup complete helm operator!"
+
+echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline trace consumer..."
+cat <<EOF > create_multibranch_pipeline_trace_consumer.groovy
+import jenkins.model.*
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.common.*
+import org.jenkinsci.plugins.github_branch_source.*
+import org.jenkinsci.plugins.workflow.multibranch.*
+import jenkins.branch.*
+import hudson.util.Secret
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+
+def jenkins = Jenkins.instance
+
+def credentialsId = "$GIT_CREDENTIALS_ID"
+def gitUsername = "$GIT_USERNAME"
+def gitPersonalAccessToken = "$GIT_PERSONAL_ACCESS_TOKEN"
+def pipelineName = "$TRACE_CONSUMER_ACTIONS_PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$TRACE_CONSUMER_REPO_NAME"
+
+def store = SystemCredentialsProvider.getInstance().getStore()
+def existingCredentials = CredentialsProvider.lookupCredentials(
+    UsernamePasswordCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    def credentials = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        credentialsId,
+        "GitHub Personal Access Token",
+        gitUsername,
+        gitPersonalAccessToken
+    )
+    store.addCredentials(Domain.global(), credentials)
+}
+
+def existingJob = jenkins.getItem(pipelineName)
+
+if (!existingJob) {
+    println("Creating GitHub Multibranch Pipeline: "+ pipelineName)
+
+    def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
+    
+    def githubSource = new GitHubSCMSource(repoOwner, repoName)
+    githubSource.credentialsId = credentialsId  // Keep this as-is per your request
+    
+    def traits = [
+        new OriginPullRequestDiscoveryTrait(2), // Discover PRs from origin: Merge with target branch
+        new ForkPullRequestDiscoveryTrait(2, new ForkPullRequestDiscoveryTrait.TrustPermission()) // Discover PRs from forks: Trust users with Admin/Write permission
+    ]
+    
+    githubSource.getTraits().addAll(traits)
+    
+    multibranchProject.getSourcesList().add(new BranchSource(githubSource))
+    def projectFactory = new WorkflowBranchProjectFactory()
+    projectFactory.setScriptPath("Jenkinsfile")
+    multibranchProject.setProjectFactory(projectFactory)
+    multibranchProject.scheduleBuild()
+
+    println "GitHub Multibranch Pipeline setup complete!"
+} else {
+    println("Pipeline "+ pipelineName +" already exists.")
+}
+
+jenkins.save()
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline_trace_consumer.groovy
+echo "Jenkins Multibranch Pipeline setup complete trace consumer actions"
+
+
+cat <<EOF > trace-consumer-pipeline.groovy
+import jenkins.model.*
+import hudson.model.*
+import org.jenkinsci.plugins.workflow.job.*
+import org.jenkinsci.plugins.workflow.cps.*
+import hudson.plugins.git.*
+import hudson.util.Secret
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import jenkins.plugins.git.*
+import hudson.triggers.*
+import hudson.plugins.git.extensions.impl.CloneOption
+import hudson.triggers.SCMTrigger
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+import com.cloudbees.jenkins.GitHubPushTrigger
+
+def jenkins = Jenkins.instance
+
+def jobName = "$TRACE_CONSUMER_PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$TRACE_CONSUMER_REPO_NAME"
+def credentialsId = "$DOCKER_CREDENTIALS_ID"
+def gitcredentialsId = "$GIT_CREDENTIALS_ID"
+def dockerUsername = "$DOCKER_USERNAME"
+def dockerPersonalAccessToken = "$DOCKER_PERSONAL_ACCESS_TOKEN"
+def github_webhook_secretId = "$GITHUB_WEBHOOK_ID"
+def github_webhook_secret = "$GITHUB_WEBHOOK_SECRET"
+def repoUrl = "https://github.com/"+repoOwner+"/"+repoName+".git"
+
+
+def store = SystemCredentialsProvider.getInstance().getStore()
+def existingCredentials = CredentialsProvider.lookupCredentials(
+    UsernamePasswordCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    def credentials = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        credentialsId,
+        "Docker Hub Personal Access Token",
+        dockerUsername,
+        dockerPersonalAccessToken
+    )
+    store.addCredentials(Domain.global(), credentials)
+}
+
+def existingWebhookSecret = CredentialsProvider.lookupCredentials(
+    StringCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == github_webhook_secretId }
+
+if (!existingWebhookSecret) {
+    def webhookSecret = new StringCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        github_webhook_secretId,
+        "GitHub Webhook Secret",
+        Secret.fromString(github_webhook_secret)
+    )
+    store.addCredentials(Domain.global(), webhookSecret)
+}
+
+def job = jenkins.getItem(jobName)
+if (job) {
+    println("Job "+ jobName+ "already exists. Deleting and recreating it.")
+    job.delete()
+}
+
+job = jenkins.createProject(WorkflowJob, jobName)
+job.setDescription("Builds and pushes a multi-platform container image (Linux & Windows) to a private Docker Hub repository.")
+
+def scm = new GitSCM(repoUrl)
+scm.branches = [new BranchSpec("*/main")]
+scm.userRemoteConfigs = [new UserRemoteConfig(repoUrl, null, null, gitcredentialsId)]
+
+def definition = new CpsScmFlowDefinition(scm, "JenkinsfileDocker")
+job.definition = definition
+
+def webhookSecretFromJenkins = CredentialsProvider.lookupCredentials(
+    StringCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == github_webhook_secretId }?.getSecret().getPlainText()
+
+if (!webhookSecretFromJenkins) {
+    println("Warning: GitHub webhook secret not found in Jenkins credentials store!")
+} else {
+    def githubTrigger = new GitHubPushTrigger()
+    job.addTrigger(githubTrigger)
+}
+
+def trigger = new SCMTrigger("")
+job.addTrigger(trigger)
+job.save()
+trigger.start(job, false)
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < trace-consumer-pipeline.groovy
+echo "Jenkins Pipeline setup complete trace consumer!"
+
+echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline trace pubsub..."
+cat <<EOF > create_multibranch_pipeline_trace_pubsub.groovy
+import jenkins.model.*
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.common.*
+import org.jenkinsci.plugins.github_branch_source.*
+import org.jenkinsci.plugins.workflow.multibranch.*
+import jenkins.branch.*
+import hudson.util.Secret
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+
+def jenkins = Jenkins.instance
+
+def credentialsId = "$GIT_CREDENTIALS_ID"
+def gitUsername = "$GIT_USERNAME"
+def gitPersonalAccessToken = "$GIT_PERSONAL_ACCESS_TOKEN"
+def pipelineName = "$TRACE_PUBSUB_ACTIONS_PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$TRACE_PUBSUB_REPO_NAME"
+
+def store = SystemCredentialsProvider.getInstance().getStore()
+def existingCredentials = CredentialsProvider.lookupCredentials(
+    UsernamePasswordCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    def credentials = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        credentialsId,
+        "GitHub Personal Access Token",
+        gitUsername,
+        gitPersonalAccessToken
+    )
+    store.addCredentials(Domain.global(), credentials)
+}
+
+def existingJob = jenkins.getItem(pipelineName)
+
+if (!existingJob) {
+    println("Creating GitHub Multibranch Pipeline: "+ pipelineName)
+
+    def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
+    
+    def githubSource = new GitHubSCMSource(repoOwner, repoName)
+    githubSource.credentialsId = credentialsId  // Keep this as-is per your request
+    
+    def traits = [
+        new OriginPullRequestDiscoveryTrait(2), // Discover PRs from origin: Merge with target branch
+        new ForkPullRequestDiscoveryTrait(2, new ForkPullRequestDiscoveryTrait.TrustPermission()) // Discover PRs from forks: Trust users with Admin/Write permission
+    ]
+    
+    githubSource.getTraits().addAll(traits)
+    
+    multibranchProject.getSourcesList().add(new BranchSource(githubSource))
+    def projectFactory = new WorkflowBranchProjectFactory()
+    projectFactory.setScriptPath("Jenkinsfile")
+    multibranchProject.setProjectFactory(projectFactory)
+    multibranchProject.scheduleBuild()
+
+    println "GitHub Multibranch Pipeline setup complete!"
+} else {
+    println("Pipeline "+ pipelineName +" already exists.")
+}
+
+jenkins.save()
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline_trace_pubsub.groovy
+echo "Jenkins Multibranch Pipeline setup complete trace pubsub actions"
+
+
+cat <<EOF > trace-pubsub-pipeline.groovy
+import jenkins.model.*
+import hudson.model.*
+import org.jenkinsci.plugins.workflow.job.*
+import org.jenkinsci.plugins.workflow.cps.*
+import hudson.plugins.git.*
+import hudson.util.Secret
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import jenkins.plugins.git.*
+import hudson.triggers.*
+import hudson.plugins.git.extensions.impl.CloneOption
+import hudson.triggers.SCMTrigger
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+import com.cloudbees.jenkins.GitHubPushTrigger
+
+def jenkins = Jenkins.instance
+
+def jobName = "$TRACE_PUBSUB_PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$TRACE_PUBSUB_REPO_NAME"
+def credentialsId = "$DOCKER_CREDENTIALS_ID"
+def gitcredentialsId = "$GIT_CREDENTIALS_ID"
+def dockerUsername = "$DOCKER_USERNAME"
+def dockerPersonalAccessToken = "$DOCKER_PERSONAL_ACCESS_TOKEN"
+def github_webhook_secretId = "$GITHUB_WEBHOOK_ID"
+def github_webhook_secret = "$GITHUB_WEBHOOK_SECRET"
+def repoUrl = "https://github.com/"+repoOwner+"/"+repoName+".git"
+
+
+def store = SystemCredentialsProvider.getInstance().getStore()
+def existingCredentials = CredentialsProvider.lookupCredentials(
+    UsernamePasswordCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    def credentials = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        credentialsId,
+        "Docker Hub Personal Access Token",
+        dockerUsername,
+        dockerPersonalAccessToken
+    )
+    store.addCredentials(Domain.global(), credentials)
+}
+
+def existingWebhookSecret = CredentialsProvider.lookupCredentials(
+    StringCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == github_webhook_secretId }
+
+if (!existingWebhookSecret) {
+    def webhookSecret = new StringCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        github_webhook_secretId,
+        "GitHub Webhook Secret",
+        Secret.fromString(github_webhook_secret)
+    )
+    store.addCredentials(Domain.global(), webhookSecret)
+}
+
+def job = jenkins.getItem(jobName)
+if (job) {
+    println("Job "+ jobName+ "already exists. Deleting and recreating it.")
+    job.delete()
+}
+
+job = jenkins.createProject(WorkflowJob, jobName)
+job.setDescription("Builds and pushes a multi-platform container image (Linux & Windows) to a private Docker Hub repository.")
+
+def scm = new GitSCM(repoUrl)
+scm.branches = [new BranchSpec("*/main")]
+scm.userRemoteConfigs = [new UserRemoteConfig(repoUrl, null, null, gitcredentialsId)]
+
+def definition = new CpsScmFlowDefinition(scm, "JenkinsfileDocker")
+job.definition = definition
+
+def webhookSecretFromJenkins = CredentialsProvider.lookupCredentials(
+    StringCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == github_webhook_secretId }?.getSecret().getPlainText()
+
+if (!webhookSecretFromJenkins) {
+    println("Warning: GitHub webhook secret not found in Jenkins credentials store!")
+} else {
+    def githubTrigger = new GitHubPushTrigger()
+    job.addTrigger(githubTrigger)
+}
+
+def trigger = new SCMTrigger("")
+job.addTrigger(trigger)
+job.save()
+trigger.start(job, false)
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < trace-pubsub-pipeline.groovy
+echo "Jenkins Pipeline setup complete trace pubsub!"
+
+echo "Creating Groovy Script to setup Jenkins Multibranch Pipeline trace server..."
+cat <<EOF > create_multibranch_pipeline_trace_frontend.groovy
+import jenkins.model.*
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.common.*
+import org.jenkinsci.plugins.github_branch_source.*
+import org.jenkinsci.plugins.workflow.multibranch.*
+import jenkins.branch.*
+import hudson.util.Secret
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+
+def jenkins = Jenkins.instance
+
+def credentialsId = "$GIT_CREDENTIALS_ID"
+def gitUsername = "$GIT_USERNAME"
+def gitPersonalAccessToken = "$GIT_PERSONAL_ACCESS_TOKEN"
+def pipelineName = "$TRACE_FRONTEND_ACTIONS_PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$TRACE_FRONTEND_REPO_NAME"
+
+def store = SystemCredentialsProvider.getInstance().getStore()
+def existingCredentials = CredentialsProvider.lookupCredentials(
+    UsernamePasswordCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    def credentials = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        credentialsId,
+        "GitHub Personal Access Token",
+        gitUsername,
+        gitPersonalAccessToken
+    )
+    store.addCredentials(Domain.global(), credentials)
+}
+
+def existingJob = jenkins.getItem(pipelineName)
+
+if (!existingJob) {
+    println("Creating GitHub Multibranch Pipeline: "+ pipelineName)
+
+    def multibranchProject = jenkins.createProject(WorkflowMultiBranchProject.class, pipelineName)
+    
+    def githubSource = new GitHubSCMSource(repoOwner, repoName)
+    githubSource.credentialsId = credentialsId  // Keep this as-is per your request
+    
+    def traits = [
+        new OriginPullRequestDiscoveryTrait(2), // Discover PRs from origin: Merge with target branch
+        new ForkPullRequestDiscoveryTrait(2, new ForkPullRequestDiscoveryTrait.TrustPermission()) // Discover PRs from forks: Trust users with Admin/Write permission
+    ]
+    
+    githubSource.getTraits().addAll(traits)
+    
+    multibranchProject.getSourcesList().add(new BranchSource(githubSource))
+    def projectFactory = new WorkflowBranchProjectFactory()
+    projectFactory.setScriptPath("Jenkinsfile")
+    multibranchProject.setProjectFactory(projectFactory)
+    multibranchProject.scheduleBuild()
+
+    println "GitHub Multibranch Pipeline setup complete!"
+} else {
+    println("Pipeline "+ pipelineName +" already exists.")
+}
+
+jenkins.save()
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < create_multibranch_pipeline_trace_frontend.groovy
+echo "Jenkins Multibranch Pipeline setup complete trace frontend actions"
+
+
+cat <<EOF > trace-frontend-pipeline.groovy
+import jenkins.model.*
+import hudson.model.*
+import org.jenkinsci.plugins.workflow.job.*
+import org.jenkinsci.plugins.workflow.cps.*
+import hudson.plugins.git.*
+import hudson.util.Secret
+import com.cloudbees.plugins.credentials.*
+import com.cloudbees.plugins.credentials.common.*
+import com.cloudbees.plugins.credentials.domains.*
+import com.cloudbees.plugins.credentials.impl.*
+import jenkins.plugins.git.*
+import hudson.triggers.*
+import hudson.plugins.git.extensions.impl.CloneOption
+import hudson.triggers.SCMTrigger
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+import com.cloudbees.jenkins.GitHubPushTrigger
+
+def jenkins = Jenkins.instance
+
+def jobName = "$TRACE_FRONTEND_PIPELINE_NAME"
+def repoOwner = "$REPO_OWNER"
+def repoName = "$TRACE_FRONTEND_REPO_NAME"
+def credentialsId = "$DOCKER_CREDENTIALS_ID"
+def gitcredentialsId = "$GIT_CREDENTIALS_ID"
+def dockerUsername = "$DOCKER_USERNAME"
+def dockerPersonalAccessToken = "$DOCKER_PERSONAL_ACCESS_TOKEN"
+def github_webhook_secretId = "$GITHUB_WEBHOOK_ID"
+def github_webhook_secret = "$GITHUB_WEBHOOK_SECRET"
+def repoUrl = "https://github.com/"+repoOwner+"/"+repoName+".git"
+
+
+def store = SystemCredentialsProvider.getInstance().getStore()
+def existingCredentials = CredentialsProvider.lookupCredentials(
+    UsernamePasswordCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == credentialsId }
+
+if (!existingCredentials) {
+    def credentials = new UsernamePasswordCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        credentialsId,
+        "Docker Hub Personal Access Token",
+        dockerUsername,
+        dockerPersonalAccessToken
+    )
+    store.addCredentials(Domain.global(), credentials)
+}
+
+def existingWebhookSecret = CredentialsProvider.lookupCredentials(
+    StringCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == github_webhook_secretId }
+
+if (!existingWebhookSecret) {
+    def webhookSecret = new StringCredentialsImpl(
+        CredentialsScope.GLOBAL,
+        github_webhook_secretId,
+        "GitHub Webhook Secret",
+        Secret.fromString(github_webhook_secret)
+    )
+    store.addCredentials(Domain.global(), webhookSecret)
+}
+
+def job = jenkins.getItem(jobName)
+if (job) {
+    println("Job "+ jobName+ "already exists. Deleting and recreating it.")
+    job.delete()
+}
+
+job = jenkins.createProject(WorkflowJob, jobName)
+job.setDescription("Builds and pushes a multi-platform container image (Linux & Windows) to a private Docker Hub repository.")
+
+def scm = new GitSCM(repoUrl)
+scm.branches = [new BranchSpec("*/main")]
+scm.userRemoteConfigs = [new UserRemoteConfig(repoUrl, null, null, gitcredentialsId)]
+
+def definition = new CpsScmFlowDefinition(scm, "JenkinsfileDocker")
+job.definition = definition
+
+def webhookSecretFromJenkins = CredentialsProvider.lookupCredentials(
+    StringCredentialsImpl.class,
+    Jenkins.instance,
+    null,
+    Collections.emptyList()
+).find { it.id == github_webhook_secretId }?.getSecret().getPlainText()
+
+if (!webhookSecretFromJenkins) {
+    println("Warning: GitHub webhook secret not found in Jenkins credentials store!")
+} else {
+    def githubTrigger = new GitHubPushTrigger()
+    job.addTrigger(githubTrigger)
+}
+
+def trigger = new SCMTrigger("")
+job.addTrigger(trigger)
+job.save()
+trigger.start(job, false)
+EOF
+
+java -jar jenkins-cli.jar -s http://localhost:8080/ -auth admin:$(cat /tmp/initialAdminPassword) groovy = < trace-frontend-pipeline.groovy
+echo "Jenkins Pipeline setup complete trace frontend!"
+
+

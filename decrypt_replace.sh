@@ -66,6 +66,19 @@ HELM_OPERATOR_REPO_NAME=$(echo "$decrypted_secrets" | grep helm-operator-repo_na
 HELM_OPERATOR_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep db-backup-operator-pipeline | awk '{print $2}')
 HELM_OPERATOR_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep db-backup-operator-actions-pipeline | awk '{print $2}')
 
+TRACE_CONSUMER_REPO_NAME=$(echo "$decrypted_secrets" | grep trace-consumer-repo_name | awk '{print $2}')
+TRACE_CONSUMER_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-consumer-pipeline | awk '{print $2}')
+TRACE_CONSUMER_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-consumer-actions-pipeline | awk '{print $2}')
+
+TRACE_PUBSUB_REPO_NAME=$(echo "$decrypted_secrets" | grep trace-pubsub-repo_name | awk '{print $2}')
+TRACE_PUBSUB_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-pubsub-pipeline | awk '{print $2}')
+TRACE_PUBSUB_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-pubsub-actions-pipeline | awk '{print $2}')
+
+TRACE_FRONTEND_REPO_NAME=$(echo "$decrypted_secrets" | grep trace-frontend-repo_name | awk '{print $2}')
+TRACE_FRONTEND_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-frontend-pipeline | awk '{print $2}')
+TRACE_FRONTEND_ACTIONS_PIPELINE_NAME=$(echo "$decrypted_secrets" | grep trace-frontend-actions-pipeline | awk '{print $2}')
+
+
 sed -i "s/ADMIN_USERNAME=\"\*\*\*\"/ADMIN_USERNAME=\"$ADMIN_USERNAME\"/" jenkins.sh
 sed -i "s/ADMIN_PASSWORD=\"\*\*\*\"/ADMIN_PASSWORD=\"$ADMIN_PASSWORD\"/" jenkins.sh
 sed -i "s/ADMIN_FIRSTNAME=\"\*\*\*\"/ADMIN_FIRSTNAME=\"$ADMIN_FIRSTNAME\"/" jenkins.sh
@@ -128,3 +141,15 @@ sed -i "s/TRACE_SERVER_REPO_NAME=\"\*\*\*\"/TRACE_SERVER_REPO_NAME=\"$TRACE_SERV
 sed -i "s/HELM_OPERATOR_PIPELINE_NAME=\"\*\*\*\"/HELM_OPERATOR_PIPELINE_NAME=\"$HELM_OPERATOR_PIPELINE_NAME\"/" jenkins.sh
 sed -i "s/HELM_OPERATOR_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/HELM_OPERATOR_ACTIONS_PIPELINE_NAME=\"$HELM_OPERATOR_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
 sed -i "s/HELM_OPERATOR_REPO_NAME=\"\*\*\*\"/HELM_OPERATOR_REPO_NAME=\"$HELM_OPERATOR_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/TRACE_CONSUMER_PIPELINE_NAME=\"\*\*\*\"/TRACE_CONSUMER_PIPELINE_NAME=\"$TRACE_CONSUMER_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_CONSUMER_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/TRACE_CONSUMER_ACTIONS_PIPELINE_NAME=\"$TRACE_CONSUMER_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_CONSUMER_REPO_NAME=\"\*\*\*\"/TRACE_CONSUMER_REPO_NAME=\"$TRACE_CONSUMER_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/TRACE_PUBSUB_PIPELINE_NAME=\"\*\*\*\"/TRACE_PUBSUB_PIPELINE_NAME=\"$TRACE_PUBSUB_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_PUBSUB_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/TRACE_PUBSUB_ACTIONS_PIPELINE_NAME=\"$TRACE_PUBSUB_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_PUBSUB_REPO_NAME=\"\*\*\*\"/TRACE_PUBSUB_REPO_NAME=\"$TRACE_PUBSUB_REPO_NAME\"/" jenkins.sh
+
+sed -i "s/TRACE_FRONTEND_PIPELINE_NAME=\"\*\*\*\"/TRACE_FRONTEND_PIPELINE_NAME=\"$TRACE_FRONTEND_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_FRONTEND_ACTIONS_PIPELINE_NAME=\"\*\*\*\"/TRACE_FRONTEND_ACTIONS_PIPELINE_NAME=\"$TRACE_FRONTEND_ACTIONS_PIPELINE_NAME\"/" jenkins.sh
+sed -i "s/TRACE_FRONTEND_REPO_NAME=\"\*\*\*\"/TRACE_FRONTEND_REPO_NAME=\"$TRACE_FRONTEND_REPO_NAME\"/" jenkins.sh
